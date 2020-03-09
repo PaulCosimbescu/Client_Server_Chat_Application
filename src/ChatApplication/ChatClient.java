@@ -20,9 +20,8 @@ public class ChatClient {
     JTextField textField = new JTextField(50);
     JTextArea messageArea = new JTextArea(16, 50);
 
-    public ChatClient(String serverAddress) {
-        this.serverAddress = serverAddress;
-
+    public ChatClient() {
+        this.serverAddress = getIP();
         textField.setEditable(false);
         messageArea.setEditable(false);
         this.frame.getContentPane().add(textField, BorderLayout.SOUTH);
@@ -36,6 +35,20 @@ public class ChatClient {
                 textField.setText("");
             }
         });
+    }
+
+    private String getIP() {
+        String IP = JOptionPane.showInputDialog(
+                this.frame,
+                "Choose an IP to connect too:",
+                "IP selection",
+                JOptionPane.PLAIN_MESSAGE
+        );
+
+        if(IP == null) {
+            System.exit(0);
+        }
+        return IP;
     }
 
     private String getName() {
@@ -52,9 +65,9 @@ public class ChatClient {
         return name;
     }
 
-    private String getPort(int isFirstClient) {
+    private String getPort(boolean isFirstClient) {
         String port;
-        if(isFirstClient == 1) {
+        if(isFirstClient) {
             port = JOptionPane.showInputDialog(
                     this.frame,
                     "Choose a port with which other clients can connect with you:",
@@ -92,15 +105,15 @@ public class ChatClient {
 
                 if (line.startsWith("FIRST_CLIENT")) {
 
-                    out.println(getPort(1));
+                    out.println(getPort(true));
 
                 } else if (line.startsWith("SUBMIT_PORT_TO_CONNECT")) {
 
-                    out.println(getPort(0));
+                    out.println(getPort(false));
 
                 } else if(line.startsWith("SUBMIT_YOUR_PORT")) {
 
-                    out.println(getPort(1));
+                    out.println(getPort(true));
                 }
 
                 else if (line.startsWith("SUBMIT_NAME")) {
@@ -125,12 +138,11 @@ public class ChatClient {
 
     public static void main(String[] args) throws Exception {
 
-        ChatClient client = new ChatClient("localhost");
+        ChatClient client = new ChatClient();
         client.frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         client.frame.setVisible(true);
         client.run();
     }
-
 
     @NotNull
     private static String getDateAndTime() {
