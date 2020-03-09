@@ -1,49 +1,34 @@
 package ChatApplication;
 
+import org.jetbrains.annotations.NotNull;
+
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.util.HashSet;
-import java.util.Scanner;
-import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.awt.event.*;
+import java.io.*;
+import java.net.*;
+import java.time.*;
+import java.time.format.*;
+import java.util.*;
+import java.util.concurrent.*;
 
-/**
- * A multithreaded chat room server. When a client connects the server requests a screen
- * name by sending the client the text "SUBMITNAME", and keeps requesting a name until
- * a unique one is received. After a client submits a unique name, the server acknowledges
- * with "NAMEACCEPTED". Then all messages from that client will be broadcast to all other
- * clients that have submitted a unique screen name. The broadcast messages are prefixed
- * with "MESSAGE".
- *
- * This is just a teaching example so it can be enhanced in many ways, e.g., better
- * logging. Another is to accept a lot of fun commands, like Slack.
- */
 public class ChatServer {
 
-
-
     // All client names, so we can check for duplicates upon registration.
-    private static Set<String> names = new HashSet<>();
+    private static final Set<String> names = new HashSet<>();
 
-    private static Set<String> clientIDs = new HashSet<>();
+    private static final Set<Integer> clientPortHash = new HashSet<>();
 
-    private static Set<Integer> clientSocketHash = new HashSet<>();
-
-    JFrame frame = new JFrame("ChatApplication.Server");
-    JTextField textField = new JTextField(50);
-    JTextArea messageArea = new JTextArea(16, 50);
+    public static JFrame frame = new JFrame("Server");
+    public static JTextField textField = new JTextField(50);
+    public static JTextArea messageArea = new JTextArea(16, 50);
 
     public ChatServer() {
 
+
         textField.setEditable(false);
         messageArea.setEditable(false);
+
         frame.getContentPane().add(textField, BorderLayout.SOUTH);
         frame.getContentPane().add(new JScrollPane(messageArea), BorderLayout.CENTER);
         frame.pack();
@@ -54,9 +39,9 @@ public class ChatServer {
                 textField.setText("");
             }
         });
+
+
     }
-
-
 
     // The set of all the print writers for all the clients, used for broadcast.
     private static Set<PrintWriter> writers = new HashSet<>();
@@ -66,8 +51,8 @@ public class ChatServer {
 
         ChatServer chatServer = new ChatServer();
 
-        chatServer.frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        chatServer.frame.setVisible(true);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setVisible(true);
 
         System.out.println("The chat server is running...");
 
@@ -75,128 +60,123 @@ public class ChatServer {
         ExecutorService pool = Executors.newFixedThreadPool(500);
         try (ServerSocket listener = new ServerSocket(59001)) {
             while (true) {
-
                 pool.execute(new Handler(listener.accept()));
             }
         }
     }
 
-    /**
-     * The client handler task.
-     */
     private static class Handler implements Runnable {
         private String name;
-        private String clientID;
-        private int clientSocket;
+        private String stringClientPort;
+        private int intClientPort;
+        private int yourPort;
         private Socket socket;
         private Scanner in;
         private PrintWriter out;
 
-        /**
-         * Constructs a handler thread, squirreling away the socket. All the interesting
-         * work is done in the run method. Remember the constructor is called from the
-         * server's main method, so this has to be as short as possible.
-         */
         public Handler(Socket socket) {
             this.socket = socket;
         }
 
-        /**
-         * Services this thread's client by repeatedly requesting a screen name until a
-         * unique one has been submitted, then acknowledges the name and registers the
-         * output stream for the client in a global set, then repeatedly gets inputs and
-         * broadcasts them.
-         */
+
         public void run() {
-
-
-
-
-
             try {
                 in = new Scanner(socket.getInputStream());
                 out = new PrintWriter(socket.getOutputStream(), true);
 
+                // Keep requesting a port until we get a unique one.
 
+                if(clientPortHash.isEmpty()) {
 
-                // Keep requesting a ID until we get a unique one.
+                    while(true) {
+                        out.println("FIRST_CLIENT");
+                        stringClientPort = in.nextLine();
 
-                if(clientSocketHash.isEmpty()) {
-                    out.println("FIRSTCLIENT");
-                    clientSocket = in.nextInt();
+                        try {
+                            intClientPort = Integer.parseInt(stringClientPort);
+                        } catch (NumberFormatException e) {
+                            continue;
+                        }
 
+                        if (intClientPort < 1 || intClientPort > 65535) {
+                            continue;
+                        }
 
-//                    while (true) {
-//
-//                        clientSocket = in.nextInt();
-//                        if (clientSocket < 1) {
-//                            return;
-//                        }
-//                        synchronized (clientSocketHash) {
-//
-//                                break;
-//                        }
-//                    }
+                        synchronized (clientPortHash) {
+                            clientPortHash.add(intClientPort);
+                            break;
+                        }
+                    }
                 } else {
                     while (true) {
-                        out.println("SUBMITSOCKET");
-                        clientSocket = in.nextInt();
-                        if (clientSocket < 1) {
-                            return;
-                        }
-                        synchronized (clientSocketHash) {
-                            if (!clientSocketHash.contains(clientSocket)) {
 
+                        out.println("SUBMIT_PORT_TO_CONNECT");
+                        stringClientPort = in.nextLine();
+
+                        try {
+                            intClientPort = Integer.parseInt(stringClientPort);
+                        } catch (NumberFormatException e) {
+                            continue;
+                        }
+
+                        if (intClientPort < 1 || intClientPort > 65535) {
+                            continue;
+                        }
+
+                        synchronized (clientPortHash) {
+                            if (clientPortHash.contains(intClientPort)) {
                                 break;
                             }
                         }
                     }
-                }
 
-                // Keep requesting a ID until we get a unique one.
-                while (true) {
-                    out.println("SUBMITID");
-                    clientID = in.nextLine();
-                    if (clientID == null) {
-                        return;
-                    }
-                    synchronized (clientIDs) {
-                        if (!clientID.isEmpty() && !clientIDs.contains(clientID)) {
-                            break;
+                    while(true) {
+                        out.println("SUBMIT_YOUR_PORT");
+                        stringClientPort = in.nextLine();
+
+                        try {
+                            yourPort = Integer.parseInt(stringClientPort);
+                        } catch (NumberFormatException e) {
+                            continue;
                         }
+
+                        if (yourPort < 1 || yourPort > 65535) {
+                            continue;
+                        }
+                        synchronized (clientPortHash) {
+                            if(!clientPortHash.contains(yourPort)) {
+                                clientPortHash.add(yourPort);
+                                break;
+                            }
+                        }
+
                     }
                 }
-
 
 
                 // Keep requesting a name until we get a unique one.
                 while (true) {
-                    out.println("SUBMITNAME");
+                    out.println("SUBMIT_NAME ");
                     name = in.nextLine();
                     if (name == null) {
-                        return;
+                        continue;
                     }
                     synchronized (names) {
                         if (!name.isEmpty() && !names.contains(name)) {
-
+                            names.add(name);
                             System.out.println("New Client active: " + name
-                                    + ", ID: "  + clientID
-                                    + ", Socket: " + clientSocket);
+                                    + ", Port: " + stringClientPort);
                             break;
                         }
                     }
                 }
 
-                names.add(name);
-                clientIDs.add(clientID);
-                clientSocketHash.add(clientSocket);
+                out.println("NAME_ACCEPTED" + name);
+                messageArea.append(getDateAndTime() + name + " has joined" + "\n");
 
-                // Now that a successful name has been chosen, add the socket's print writer
-                // to the set of all writers so this client can receive broadcast messages.
-                // But BEFORE THAT, let everyone else know that the new person has joined!
-                out.println("NAMEACCEPTED " + name + " ID - "  + clientID);
-                    for (PrintWriter writer : writers) {
+                for (PrintWriter writer : writers) {
                     writer.println("MESSAGE " + name + " has joined");
+
                 }
                 writers.add(out);
 
@@ -206,19 +186,35 @@ public class ChatServer {
                     if (input.toLowerCase().startsWith("/quit")) {
                         return;
                     }
+
+                    messageArea.append(getDateAndTime() + name + ": " + input + "\n");
                     for (PrintWriter writer : writers) {
                         writer.println("MESSAGE " +  name + ": " + input);
                     }
+
+                    if(input.toLowerCase().startsWith("list users")) {
+                        for (String s : names) {
+                            out.println("MESSAGE " + s + "\n");
+                        }
+                    }
                 }
             } catch (Exception e) {
+
                 System.out.println(e);
             } finally {
+
                 if (out != null) {
                     writers.remove(out);
                 }
+
+                if(stringClientPort != null) {
+                    clientPortHash.remove(intClientPort);
+                }
+
                 if (name != null) {
-                    System.out.println(name + " is leaving");
                     names.remove(name);
+                    messageArea.append(getDateAndTime() + name + " with port " + stringClientPort + ", has left" + "\n");
+
                     for (PrintWriter writer : writers) {
                         writer.println("MESSAGE " + name + " has left");
                     }
@@ -228,4 +224,11 @@ public class ChatServer {
         }
     }
 
+    @NotNull
+    private static String getDateAndTime() {
+        DateTimeFormatter DTF = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss - ");
+        LocalDateTime LDT = LocalDateTime.now();
+
+        return  DTF.format(LDT);
+    }
 }

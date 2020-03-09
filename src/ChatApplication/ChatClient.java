@@ -1,35 +1,17 @@
 package ChatApplication;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.net.Socket;
-import java.text.SimpleDateFormat;
-import java.util.Scanner;
-import java.awt.BorderLayout;
-import javax.swing.JFrame;
-import javax.swing.JOptionPane;
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-/**
- * A simple Swing-based client for the chat server. Graphically it is a frame with a text
- * field for entering messages and a textarea to see the whole dialog.
- *
- * The client follows the following Chat Protocol. When the server sends "SUBMITNAME" the
- * client replies with the desired screen name. The server will keep sending "SUBMITNAME"
- * requests as long as the client submits screen names that are already in use. When the
- * server sends a line beginning with "NAMEACCEPTED" the client is now allowed to start
- * sending the server arbitrary strings to be broadcast to all chatters connected to the
- * server. When the server sends a line beginning with "MESSAGE" then all characters
- * following this string should be displayed in its message area.
- */
+        import org.jetbrains.annotations.NotNull;
+
+        import java.awt.event.*;
+        import java.io.*;
+        import java.net.*;
+        import java.util.*;
+        import java.awt.*;
+        import javax.swing.*;
+        import java.time.*;
+        import java.time.format.*;
+
 public class ChatClient {
-
-
 
     String serverAddress;
     Scanner in;
@@ -38,25 +20,14 @@ public class ChatClient {
     JTextField textField = new JTextField(50);
     JTextArea messageArea = new JTextArea(16, 50);
 
-
-    private static final SimpleDateFormat sdf = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss");
-
-
-    /**
-     * Constructs the client by laying out the GUI and registering a listener with the
-     * textfield so that pressing Return in the listener sends the textfield contents
-     * to the server. Note however that the textfield is initially NOT editable, and
-     * only becomes editable AFTER the client receives the NAMEACCEPTED message from
-     * the server.
-     */
     public ChatClient(String serverAddress) {
         this.serverAddress = serverAddress;
 
         textField.setEditable(false);
         messageArea.setEditable(false);
-        frame.getContentPane().add(textField, BorderLayout.SOUTH);
-        frame.getContentPane().add(new JScrollPane(messageArea), BorderLayout.CENTER);
-        frame.pack();
+        this.frame.getContentPane().add(textField, BorderLayout.SOUTH);
+        this.frame.getContentPane().add(new JScrollPane(messageArea), BorderLayout.CENTER);
+        this.frame.pack();
 
         // Send on enter then clear to prepare for next message
         textField.addActionListener(new ActionListener() {
@@ -69,7 +40,7 @@ public class ChatClient {
 
     private String getName() {
         String name = JOptionPane.showInputDialog(
-                frame,
+                this.frame,
                 "Choose a screen name:",
                 "Screen name selection",
                 JOptionPane.PLAIN_MESSAGE
@@ -81,39 +52,38 @@ public class ChatClient {
         return name;
     }
 
-    private String getID() {
-        String id = JOptionPane.showInputDialog(
-                frame,
-                "Choose unique ID:",
-                "Unique ID Selection",
-                JOptionPane.PLAIN_MESSAGE
-        );
 
-        if(id == null) {
-            System.exit(0);
-        }
-        return id;
-    }
 
-    private String getSocket(int isFirstClient) {
+    private String getPort(int isFirstClient) {
+        String port;
         if(isFirstClient == 1) {
-            return JOptionPane.showInputDialog(
-                    frame,
-                    "Choose a socket with which other clients can connect with you: ",
-                    "Client socket",
+            port = JOptionPane.showInputDialog(
+                    this.frame,
+                    "Choose a port with which other clients can connect with you:",
+                    "Client port",
                     JOptionPane.PLAIN_MESSAGE
             );
+
+            if(port == null) {
+                System.exit(0);
+            }
+            return port;
         }
 
-        return JOptionPane.showInputDialog(
-                frame,
-                "Choose a socket of an existing client:",
-                "Client socket",
+        port = JOptionPane.showInputDialog(
+                this.frame,
+                "Choose a port of an existing client:",
+                "Client port",
                 JOptionPane.PLAIN_MESSAGE
         );
+
+        if(port == null) {
+            System.exit(0);
+        }
+        return port;
     }
 
-    private void run() throws IOException {
+    public void run() throws IOException {
         try {
             Socket socket = new Socket(serverAddress, 59001);
             in = new Scanner(socket.getInputStream());
@@ -122,48 +92,40 @@ public class ChatClient {
             while (in.hasNextLine()) {
                 String line = in.nextLine();
 
-                if(line.startsWith("FIRSTCLIENT")) {
+                if (line.startsWith("FIRST_CLIENT")) {
 
-                    out.println(getSocket(1));
+                    out.println(getPort(1));
 
-                } else if(line.startsWith("SUBMITSOCKET")) {
+                } else if (line.startsWith("SUBMIT_PORT_TO_CONNECT")) {
 
-                    out.println(getSocket(0));
+                    out.println(getPort(0));
 
-                } else if(line.startsWith("SUBMITID")) {
+                } else if(line.startsWith("SUBMIT_YOUR_PORT")) {
 
-                    out.println(getID());
+                    out.println(getPort(1));
+                }
 
-                } else if (line.startsWith("SUBMITNAME")) {
+                else if (line.startsWith("SUBMIT_NAME")) {
 
                     out.println(getName());
 
-                } else if (line.startsWith("NAMEACCEPTED")) {
+                } else if (line.startsWith("NAME_ACCEPTED")) {
 
                     this.frame.setTitle("Chatter - " + line.substring(13));
                     textField.setEditable(true);
 
                 } else if (line.startsWith("MESSAGE")) {
 
-                    messageArea.append(getDateAndTime() + ": " + line.substring(8) + "\n");
+                    messageArea.append(getDateAndTime() + line.substring(8) + "\n");
                 }
             }
         } finally {
-            frame.setVisible(false);
-            frame.dispose();
+            this.frame.setVisible(false);
+            this.frame.dispose();
         }
     }
 
     public static void main(String[] args) throws Exception {
-
-//        if (args.length != 1) {
-//            System.err.println("Pass the server IP as the sole command line argument");
-//            return;
-//        }
-
-//        for (String s : args) {
-//            System.out.println(s);
-//        }
 
         ChatClient client = new ChatClient("localhost");
         client.frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -172,8 +134,9 @@ public class ChatClient {
     }
 
 
-    private String getDateAndTime() {
-        DateTimeFormatter DTF = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss");
+    @NotNull
+    private static String getDateAndTime() {
+        DateTimeFormatter DTF = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss - ");
         LocalDateTime LDT = LocalDateTime.now();
 
         return  DTF.format(LDT);
