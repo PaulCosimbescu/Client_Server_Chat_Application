@@ -20,8 +20,24 @@ public class ChatClient {
     JTextField textField = new JTextField(50);
     JTextArea messageArea = new JTextArea(16, 50);
 
-    public ChatClient() {
-        this.serverAddress = getIP();
+    public ChatClient() throws Exception {
+
+        ChatServer chatServer = new ChatServer();
+        chatServer.main(null);
+
+        while(true) {
+            this.serverAddress = getIP();
+
+
+            if(serverAddress.equals("localhost")) {
+                break;
+            }
+
+            if(serverAddress.equals("127.0.0.1")) {
+                break;
+            }
+        }
+
         textField.setEditable(false);
         messageArea.setEditable(false);
         this.frame.getContentPane().add(textField, BorderLayout.SOUTH);

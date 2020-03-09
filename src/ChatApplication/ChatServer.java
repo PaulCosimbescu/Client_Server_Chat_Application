@@ -4,7 +4,6 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.*;
 import java.io.*;
 import java.net.*;
 import java.time.*;
@@ -14,32 +13,14 @@ import java.util.concurrent.*;
 
 public class ChatServer {
 
-    // All client names, so we can check for duplicates upon registration.
+    // All client names, and ports so we can check for duplicates upon registration.
     private static final Set<String> names = new HashSet<>();
-
     private static final Set<Integer> clientPortHash = new HashSet<>();
 
     public static JFrame frame = new JFrame("Server");
-    public static JTextField textField = new JTextField(50);
     public static JTextArea messageArea = new JTextArea(16, 50);
 
     public ChatServer() {
-
-
-        textField.setEditable(false);
-        messageArea.setEditable(false);
-
-        frame.getContentPane().add(textField, BorderLayout.SOUTH);
-        frame.getContentPane().add(new JScrollPane(messageArea), BorderLayout.CENTER);
-        frame.pack();
-
-        textField.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                textField.getText();
-                textField.setText("");
-            }
-        });
-
 
     }
 
@@ -49,12 +30,13 @@ public class ChatServer {
     public static void main(String[] args) throws Exception {
 
 
-        ChatServer chatServer = new ChatServer();
-
+        messageArea.setEditable(false);
+        frame.getContentPane().add(new JScrollPane(messageArea), BorderLayout.CENTER);
+        frame.pack();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setVisible(true);
 
-        System.out.println("The chat server is running...");
+        messageArea.append("The chat server is running.");
 
 
         ExecutorService pool = Executors.newFixedThreadPool(500);
