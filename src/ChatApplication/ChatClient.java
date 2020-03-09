@@ -22,8 +22,8 @@ public class ChatClient {
 
     public ChatClient() throws Exception {
 
-        ChatServer chatServer = new ChatServer();
-        chatServer.main(null);
+//        ChatServer chatServer = new ChatServer();
+//        chatServer.main(null);
 
         while(true) {
             this.serverAddress = getIP();
