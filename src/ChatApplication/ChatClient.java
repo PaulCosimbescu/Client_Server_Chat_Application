@@ -1,15 +1,15 @@
 package ChatApplication;
 
-        import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
-        import java.awt.event.*;
-        import java.io.*;
-        import java.net.*;
-        import java.util.*;
-        import java.awt.*;
-        import javax.swing.*;
-        import java.time.*;
-        import java.time.format.*;
+import java.awt.event.*;
+import java.io.*;
+import java.net.*;
+import java.util.*;
+import java.awt.*;
+import javax.swing.*;
+import java.time.*;
+import java.time.format.*;
 
 public class ChatClient {
 
@@ -51,8 +51,6 @@ public class ChatClient {
         }
         return name;
     }
-
-
 
     private String getPort(int isFirstClient) {
         String port;
