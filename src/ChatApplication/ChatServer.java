@@ -1,7 +1,5 @@
 package ChatApplication;
 
-import org.jetbrains.annotations.NotNull;
-
 import javax.swing.*;
 import java.awt.*;
 import java.io.*;
@@ -17,8 +15,8 @@ public class ChatServer {
     private static final Set<String> names = new HashSet<>();
     private static final Set<Integer> clientPortHash = new HashSet<>();
 
-    public static JFrame frame = new JFrame("Server");
-    public static JTextArea messageArea = new JTextArea(16, 50);
+    private static JFrame frame = new JFrame("Server");
+    private static JTextArea messageArea = new JTextArea(16, 50);
 
     public ChatServer() {
 
@@ -29,15 +27,13 @@ public class ChatServer {
 
     public static void main(String[] args) throws Exception {
 
-
         messageArea.setEditable(false);
         frame.getContentPane().add(new JScrollPane(messageArea), BorderLayout.CENTER);
         frame.pack();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setVisible(true);
 
-        messageArea.append("The chat server is running.");
-
+        messageArea.append("The chat server is running. \n");
 
         ExecutorService pool = Executors.newFixedThreadPool(500);
         try (ServerSocket listener = new ServerSocket(59001)) {
@@ -60,16 +56,13 @@ public class ChatServer {
             this.socket = socket;
         }
 
-
         public void run() {
             try {
                 in = new Scanner(socket.getInputStream());
                 out = new PrintWriter(socket.getOutputStream(), true);
 
                 // Keep requesting a port until we get a unique one.
-
                 if(clientPortHash.isEmpty()) {
-
                     while(true) {
                         out.println("FIRST_CLIENT");
                         stringClientPort = in.nextLine();
@@ -91,7 +84,6 @@ public class ChatServer {
                     }
                 } else {
                     while (true) {
-
                         out.println("SUBMIT_PORT_TO_CONNECT");
                         stringClientPort = in.nextLine();
 
@@ -131,10 +123,8 @@ public class ChatServer {
                                 break;
                             }
                         }
-
                     }
                 }
-
 
                 // Keep requesting a name until we get a unique one.
                 while (true) {
@@ -201,12 +191,11 @@ public class ChatServer {
                         writer.println("MESSAGE " + name + " has left");
                     }
                 }
-                try { socket.close(); } catch (IOException e) {}
+                try { socket.close(); } catch (IOException ignored) {}
             }
         }
     }
 
-    @NotNull
     private static String getDateAndTime() {
         DateTimeFormatter DTF = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss - ");
         LocalDateTime LDT = LocalDateTime.now();

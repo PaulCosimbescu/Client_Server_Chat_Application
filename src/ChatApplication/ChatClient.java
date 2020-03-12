@@ -1,8 +1,5 @@
 package ChatApplication;
 
-import org.jetbrains.annotations.NotNull;
-
-import java.awt.event.*;
 import java.io.*;
 import java.net.*;
 import java.util.*;
@@ -13,21 +10,20 @@ import java.time.format.*;
 
 public class ChatClient {
 
-    String serverAddress;
-    Scanner in;
-    PrintWriter out;
-    JFrame frame = new JFrame("Chatter");
-    JTextField textField = new JTextField(50);
-    JTextArea messageArea = new JTextArea(16, 50);
+    private String serverAddress;
+    private Scanner in;
+    private PrintWriter out;
+    private JFrame frame = new JFrame("Chatter");
+    private JTextField textField = new JTextField(50);
+    private JTextArea messageArea = new JTextArea(16, 50);
 
-    public ChatClient() throws Exception {
+    public ChatClient() {
 
 //        ChatServer chatServer = new ChatServer();
 //        chatServer.main(null);
 
         while(true) {
             this.serverAddress = getIP();
-
 
             if(serverAddress.equals("localhost")) {
                 break;
@@ -45,11 +41,9 @@ public class ChatClient {
         this.frame.pack();
 
         // Send on enter then clear to prepare for next message
-        textField.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                out.println(textField.getText());
-                textField.setText("");
-            }
+        textField.addActionListener(e -> {
+            out.println(textField.getText());
+            textField.setText("");
         });
     }
 
@@ -81,7 +75,7 @@ public class ChatClient {
         return name;
     }
 
-    private String getPort(boolean isFirstClient) {
+    private String setPort(boolean isFirstClient) {
         String port;
         if(isFirstClient) {
             port = JOptionPane.showInputDialog(
@@ -121,15 +115,15 @@ public class ChatClient {
 
                 if (line.startsWith("FIRST_CLIENT")) {
 
-                    out.println(getPort(true));
+                    out.println(setPort(true));
 
                 } else if (line.startsWith("SUBMIT_PORT_TO_CONNECT")) {
 
-                    out.println(getPort(false));
+                    out.println(setPort(false));
 
                 } else if(line.startsWith("SUBMIT_YOUR_PORT")) {
 
-                    out.println(getPort(true));
+                    out.println(setPort(true));
                 }
 
                 else if (line.startsWith("SUBMIT_NAME")) {
@@ -160,7 +154,6 @@ public class ChatClient {
         client.run();
     }
 
-    @NotNull
     private static String getDateAndTime() {
         DateTimeFormatter DTF = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss - ");
         LocalDateTime LDT = LocalDateTime.now();
