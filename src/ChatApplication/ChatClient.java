@@ -13,7 +13,7 @@ public class ChatClient {
     private String serverAddress;
     private Scanner in;
     private PrintWriter out;
-    private JFrame frame = new JFrame("Chatter");
+    private JFrame frame = new JFrame("Chat Application");
     private JTextField textField = new JTextField(50);
     private JTextArea messageArea = new JTextArea(16, 50);
 
@@ -84,7 +84,6 @@ public class ChatClient {
     }
 
     private String setPort(boolean isFirstClient) {
-        String port;
         String messageToClient;
         if(isFirstClient) {
             messageToClient = "Choose a port with which other clients can connect with you:";
@@ -92,7 +91,7 @@ public class ChatClient {
             messageToClient = "Choose a port of an existing client:";
         }
 
-        port = JOptionPane.showInputDialog(
+        String port = JOptionPane.showInputDialog(
                 this.frame,
                 messageToClient,
                 "Client port",
@@ -151,6 +150,6 @@ public class ChatClient {
         DateTimeFormatter DTF = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss - ");
         LocalDateTime LDT = LocalDateTime.now();
 
-        return  DTF.format(LDT);
+        return DTF.format(LDT);
     }
 }

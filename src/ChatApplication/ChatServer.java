@@ -200,6 +200,6 @@ public class ChatServer {
         DateTimeFormatter DTF = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss - ");
         LocalDateTime LDT = LocalDateTime.now();
 
-        return  DTF.format(LDT);
+        return DTF.format(LDT);
     }
 }
