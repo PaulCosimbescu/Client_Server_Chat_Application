@@ -16,21 +16,27 @@ public class ChatClient {
     private JFrame frame = new JFrame("Chat Application");
     private JTextField textField = new JTextField(50);
     private JTextArea messageArea = new JTextArea(16, 50);
-
     private Socket socket;
 
     public static void main(String[] args) throws Exception {
 
         ChatClient client = new ChatClient();
+
         client.frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        client.frame.pack();
+        client.frame.setLocationRelativeTo(null);
         client.frame.setVisible(true);
+
         client.run();
     }
 
     public ChatClient() {
 
-//        ChatServer chatServer = new ChatServer();
-//        chatServer.main(null);
+        textField.setEditable(false);
+        messageArea.setEditable(false);
+        this.frame.getContentPane().add(textField, BorderLayout.SOUTH);
+        this.frame.getContentPane().add(new JScrollPane(messageArea), BorderLayout.CENTER);
+        this.frame.pack();
 
         while(true) {
             this.serverAddress = getIP();
@@ -42,15 +48,14 @@ public class ChatClient {
             if(serverAddress.equals("127.0.0.1")) {
                 break;
             }
+
+            JOptionPane.showMessageDialog(this.frame,
+                    "IP can only be localhost or 127.0.0.1",
+                    "Error",
+                    JOptionPane.WARNING_MESSAGE);
         }
 
         hostAvailabilityCheck();
-
-        textField.setEditable(false);
-        messageArea.setEditable(false);
-        this.frame.getContentPane().add(textField, BorderLayout.SOUTH);
-        this.frame.getContentPane().add(new JScrollPane(messageArea), BorderLayout.CENTER);
-        this.frame.pack();
 
         // Send on enter then clear to prepare for next message
         textField.addActionListener(e -> {
@@ -78,8 +83,8 @@ public class ChatClient {
     private String getName() {
         String name = JOptionPane.showInputDialog(
                 this.frame,
-                "Choose a screen name:",
-                "Screen name selection",
+                "Enter Username:",
+                "Username",
                 JOptionPane.PLAIN_MESSAGE
         );
 
@@ -92,15 +97,15 @@ public class ChatClient {
     private String setPort(boolean isFirstClient) {
         String messageToClient;
         if(isFirstClient) {
-            messageToClient = "Choose a port with which other clients can connect with you:";
+            messageToClient = "Port number to listen:";
         } else {
-            messageToClient = "Choose a port of an existing client:";
+            messageToClient = "Port number to connect:";
         }
 
             String port = JOptionPane.showInputDialog(
                     this.frame,
                     messageToClient,
-                    "Client port",
+                    "Client Port",
                     JOptionPane.PLAIN_MESSAGE
             );
 
@@ -111,11 +116,12 @@ public class ChatClient {
 
     }
 
+    // Check if the server is online
     private void hostAvailabilityCheck() {
         try (Socket socket = new Socket(serverAddress, 59001)) {
         } catch (IOException ex) {
-            JOptionPane.showMessageDialog(null,
-                    "Connection to the server cannot be made",
+            JOptionPane.showMessageDialog(this.frame,
+                    "Connection to the server cannot be made!",
                     "Error",
                     JOptionPane.WARNING_MESSAGE);
             System.exit(0);
@@ -139,7 +145,7 @@ public class ChatClient {
 
                     out.println(setPort(false));
 
-                } else if(line.startsWith("SUBMIT_YOUR_PORT")) {
+                } else if (line.startsWith("SUBMIT_YOUR_PORT")) {
 
                     out.println(setPort(true));
                 } else if (line.startsWith("SUBMIT_NAME")) {
@@ -150,10 +156,13 @@ public class ChatClient {
 
                     this.frame.setTitle("Chatter - " + line.substring(13));
                     textField.setEditable(true);
+                    messageArea.append(getDateAndTime() + "You are connected. \n");
 
                 } else if (line.startsWith("MESSAGE")) {
 
                     messageArea.append(getDateAndTime() + line.substring(8) + "\n");
+                } else if (line.startsWith("ERROR")) {
+                    showError(line.substring(5));
                 }
             }
         } finally {
@@ -162,6 +171,13 @@ public class ChatClient {
         }
     }
 
+    // Method for warning message if the user input is wrong
+    private void showError(String message) {
+        JOptionPane.showMessageDialog(this.frame,
+                message,
+                "Error",
+                JOptionPane.WARNING_MESSAGE);
+    }
 
     private static String getDateAndTime() {
         DateTimeFormatter DTF = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss - ");

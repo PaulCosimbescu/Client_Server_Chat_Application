@@ -14,17 +14,15 @@ public class ChatServer {
     // All client names, and ports so we can check for duplicates upon registration.
     private static final Set<String> names = new HashSet<>();
     private static final Set<Integer> clientPortHash = new HashSet<>();
+
+    // The HashMap used to send a private message to one user
     private static final HashMap<String, PrintWriter> clientHashMap = new HashMap<>();
-
-    private static JFrame frame = new JFrame("Server");
-    private static JTextArea messageArea = new JTextArea(16, 50);
-
-    public ChatServer() {
-
-    }
 
     // The set of all the print writers for all the clients, used for broadcast.
     private static Set<PrintWriter> writers = new HashSet<>();
+
+    private static JFrame frame = new JFrame("Server");
+    private static JTextArea messageArea = new JTextArea(16, 50);
 
     public static void main(String[] args) throws Exception {
 
@@ -71,11 +69,13 @@ public class ChatServer {
                         try {
                             intClientPort = Integer.parseInt(stringClientPort);
                         } catch (NumberFormatException e) {
+                            out.println("ERROR" + "The port must be an integer.");
                             continue;
                         }
 
 
                         if (intClientPort < 1 || intClientPort > 65535) {
+                            out.println("ERROR" + "The port must be between 1 and 65535");
                             continue;
                         }
 
@@ -92,10 +92,12 @@ public class ChatServer {
                         try {
                             intClientPort = Integer.parseInt(stringClientPort);
                         } catch (NumberFormatException e) {
+                            out.println("ERROR" + "The port number must be an integer.");
                             continue;
                         }
 
                         if (intClientPort < 1 || intClientPort > 65535) {
+                            out.println("ERROR" + "The port number must be between 1 and 65535.");
                             continue;
                         }
 
@@ -103,6 +105,7 @@ public class ChatServer {
                             if (clientPortHash.contains(intClientPort)) {
                                 break;
                             }
+                            out.println("ERROR" + "No user with that port connected.");
                         }
                     }
 
@@ -113,10 +116,12 @@ public class ChatServer {
                         try {
                             yourPort = Integer.parseInt(stringClientPort);
                         } catch (NumberFormatException e) {
+                            out.println("ERROR" + "The port number must be an integer.");
                             continue;
                         }
 
                         if (yourPort < 1 || yourPort > 65535) {
+                            out.println("ERROR" + "The port number must be between 1 and 65535.");
                             continue;
                         }
                         synchronized (clientPortHash) {
@@ -124,6 +129,7 @@ public class ChatServer {
                                 clientPortHash.add(yourPort);
                                 break;
                             }
+                            out.println("ERROR" + "The port number is already in use.");
                         }
                     }
                 }
@@ -142,6 +148,7 @@ public class ChatServer {
                                     + ", Port: " + stringClientPort);
                             break;
                         }
+                        out.println("ERROR" + "Username already taken.");
                     }
                 }
 
@@ -163,9 +170,11 @@ public class ChatServer {
                         return;
                     }
 
+
+                    // Send a private message to one user
                     if(input.contains(">>")) {
 
-                        String person = input.substring(0, input.indexOf(">"));    //extract the name of the destination user
+                        String person = input.substring(0, input.indexOf(">"));
 
                         if (clientHashMap.containsKey(person)) {
                             PrintWriter writer = clientHashMap.get(person);
@@ -174,13 +183,16 @@ public class ChatServer {
                         }
                     } else {
 
-                        for (PrintWriter writer : writers) {
-                            writer.println("MESSAGE " +  name + ": " + input);
-                        }
-
+                        // Show the list of active users
                         if(input.toLowerCase().startsWith("list users")) {
                             for (String s : names) {
                                 out.println("MESSAGE " + s + "\n");
+                            }
+                        } else {
+
+                            //Send message to everyone
+                            for (PrintWriter writer : writers) {
+                                writer.println("MESSAGE " + name + ": " + input);
                             }
                         }
                     }
@@ -203,6 +215,7 @@ public class ChatServer {
 
                 if (name != null) {
                     names.remove(name);
+                    clientHashMap.remove(name, out);
                     messageArea.append(getDateAndTime() + name + " with port " + stringClientPort + ", has left" + "\n");
 
                     for (PrintWriter writer : writers) {
