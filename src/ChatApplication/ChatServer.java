@@ -14,6 +14,7 @@ public class ChatServer {
     // All client names, and ports so we can check for duplicates upon registration.
     private static final Set<String> names = new HashSet<>();
     private static final Set<Integer> clientPortHash = new HashSet<>();
+    private static final HashMap<String, PrintWriter> clientHashMap = new HashMap<>();
 
     private static JFrame frame = new JFrame("Server");
     private static JTextArea messageArea = new JTextArea(16, 50);
@@ -72,6 +73,7 @@ public class ChatServer {
                         } catch (NumberFormatException e) {
                             continue;
                         }
+
 
                         if (intClientPort < 1 || intClientPort > 65535) {
                             continue;
@@ -152,6 +154,8 @@ public class ChatServer {
                 }
                 writers.add(out);
 
+                clientHashMap.put(name, out);
+
                 // Accept messages from this client and broadcast them.
                 while (true) {
                     String input = in.nextLine();
@@ -159,20 +163,34 @@ public class ChatServer {
                         return;
                     }
 
-                    messageArea.append(getDateAndTime() + name + ": " + input + "\n");
-                    for (PrintWriter writer : writers) {
-                        writer.println("MESSAGE " +  name + ": " + input);
-                    }
+                    if(input.contains(">>")) {
 
-                    if(input.toLowerCase().startsWith("list users")) {
-                        for (String s : names) {
-                            out.println("MESSAGE " + s + "\n");
+                        String person = input.substring(0, input.indexOf(">"));    //extract the name of the destination user
+
+                        if (clientHashMap.containsKey(person)) {
+                            PrintWriter writer = clientHashMap.get(person);
+                            writer.println("MESSAGE " + name + ": " + input);
+                            out.println("MESSAGE " + name + ": " + input);
+                        }
+                    } else {
+
+                        for (PrintWriter writer : writers) {
+                            writer.println("MESSAGE " +  name + ": " + input);
+                        }
+
+                        if(input.toLowerCase().startsWith("list users")) {
+                            for (String s : names) {
+                                out.println("MESSAGE " + s + "\n");
+                            }
                         }
                     }
+
+                    messageArea.append(getDateAndTime() + name + ": " + input + "\n");
+
                 }
             } catch (Exception e) {
 
-                System.out.println(e);
+                System.out.println(e.toString());
             } finally {
 
                 if (out != null) {

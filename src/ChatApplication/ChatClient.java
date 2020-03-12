@@ -17,6 +17,8 @@ public class ChatClient {
     private JTextField textField = new JTextField(50);
     private JTextArea messageArea = new JTextArea(16, 50);
 
+    private Socket socket;
+
     public static void main(String[] args) throws Exception {
 
         ChatClient client = new ChatClient();
@@ -42,6 +44,8 @@ public class ChatClient {
             }
         }
 
+        hostAvailabilityCheck();
+
         textField.setEditable(false);
         messageArea.setEditable(false);
         this.frame.getContentPane().add(textField, BorderLayout.SOUTH);
@@ -55,6 +59,8 @@ public class ChatClient {
         });
     }
 
+
+    // Method for getting IP
     private String getIP() {
         String IP = JOptionPane.showInputDialog(
                 this.frame,
@@ -91,22 +97,34 @@ public class ChatClient {
             messageToClient = "Choose a port of an existing client:";
         }
 
-        String port = JOptionPane.showInputDialog(
-                this.frame,
-                messageToClient,
-                "Client port",
-                JOptionPane.PLAIN_MESSAGE
-        );
+            String port = JOptionPane.showInputDialog(
+                    this.frame,
+                    messageToClient,
+                    "Client port",
+                    JOptionPane.PLAIN_MESSAGE
+            );
 
-        if(port == null) {
+            if(port == null) {
+                System.exit(0);
+            }
+            return port;
+
+    }
+
+    private void hostAvailabilityCheck() {
+        try (Socket socket = new Socket(serverAddress, 59001)) {
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(null,
+                    "Connection to the server cannot be made",
+                    "Error",
+                    JOptionPane.WARNING_MESSAGE);
             System.exit(0);
         }
-        return port;
     }
 
     public void run() throws IOException {
         try {
-            Socket socket = new Socket(serverAddress, 59001);
+            socket = new Socket(serverAddress, 59001);
             in = new Scanner(socket.getInputStream());
             out = new PrintWriter(socket.getOutputStream(), true);
 
@@ -124,9 +142,7 @@ public class ChatClient {
                 } else if(line.startsWith("SUBMIT_YOUR_PORT")) {
 
                     out.println(setPort(true));
-                }
-
-                else if (line.startsWith("SUBMIT_NAME")) {
+                } else if (line.startsWith("SUBMIT_NAME")) {
 
                     out.println(getName());
 
@@ -145,6 +161,7 @@ public class ChatClient {
             this.frame.dispose();
         }
     }
+
 
     private static String getDateAndTime() {
         DateTimeFormatter DTF = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss - ");
