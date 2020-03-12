@@ -17,6 +17,14 @@ public class ChatClient {
     private JTextField textField = new JTextField(50);
     private JTextArea messageArea = new JTextArea(16, 50);
 
+    public static void main(String[] args) throws Exception {
+
+        ChatClient client = new ChatClient();
+        client.frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        client.frame.setVisible(true);
+        client.run();
+    }
+
     public ChatClient() {
 
 //        ChatServer chatServer = new ChatServer();
@@ -77,23 +85,16 @@ public class ChatClient {
 
     private String setPort(boolean isFirstClient) {
         String port;
+        String messageToClient;
         if(isFirstClient) {
-            port = JOptionPane.showInputDialog(
-                    this.frame,
-                    "Choose a port with which other clients can connect with you:",
-                    "Client port",
-                    JOptionPane.PLAIN_MESSAGE
-            );
-
-            if(port == null) {
-                System.exit(0);
-            }
-            return port;
+            messageToClient = "Choose a port with which other clients can connect with you:";
+        } else {
+            messageToClient = "Choose a port of an existing client:";
         }
 
         port = JOptionPane.showInputDialog(
                 this.frame,
-                "Choose a port of an existing client:",
+                messageToClient,
                 "Client port",
                 JOptionPane.PLAIN_MESSAGE
         );
@@ -144,14 +145,6 @@ public class ChatClient {
             this.frame.setVisible(false);
             this.frame.dispose();
         }
-    }
-
-    public static void main(String[] args) throws Exception {
-
-        ChatClient client = new ChatClient();
-        client.frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        client.frame.setVisible(true);
-        client.run();
     }
 
     private static String getDateAndTime() {
