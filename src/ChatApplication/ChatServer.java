@@ -32,10 +32,10 @@ public class ChatServer {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setVisible(true);
 
-        messageArea.append("The chat server is running. \n");
+        messageArea.append(getDateAndTime() + "The chat server is running. \n");
 
         ExecutorService pool = Executors.newFixedThreadPool(500);
-        try (ServerSocket listener = new ServerSocket(59001)) {
+        try (ServerSocket listener = new ServerSocket(11111)) {
             while (true) {
                 pool.execute(new Handler(listener.accept()));
             }
@@ -51,157 +51,33 @@ public class ChatServer {
         private Scanner in;
         private PrintWriter out;
 
-        public Handler(Socket socket) {
+        public Handler(Socket socket) throws IOException {
+            messageArea.append(getDateAndTime() + "Someone is trying to connect. \n");
+
             this.socket = socket;
+            this.in = new Scanner(socket.getInputStream());
+            this.out = new PrintWriter(socket.getOutputStream(), true);
+
         }
 
         public void run() {
             try {
-                in = new Scanner(socket.getInputStream());
-                out = new PrintWriter(socket.getOutputStream(), true);
-
-                // Keep requesting a port until we get a unique one.
-                if(clientPortHash.isEmpty()) {
-                    while(true) {
-                        out.println("FIRST_CLIENT");
-                        stringClientPort = in.nextLine();
-
-                        try {
-                            intClientPort = Integer.parseInt(stringClientPort);
-                        } catch (NumberFormatException e) {
-                            out.println("ERROR" + "The port must be an integer.");
-                            continue;
-                        }
-
-
-                        if (intClientPort < 1 || intClientPort > 65535) {
-                            out.println("ERROR" + "The port must be between 1 and 65535");
-                            continue;
-                        }
-
-                        synchronized (clientPortHash) {
-                            clientPortHash.add(intClientPort);
-                            break;
-                        }
-                    }
-                } else {
-                    while (true) {
-                        out.println("SUBMIT_PORT_TO_CONNECT");
-                        stringClientPort = in.nextLine();
-
-                        try {
-                            intClientPort = Integer.parseInt(stringClientPort);
-                        } catch (NumberFormatException e) {
-                            out.println("ERROR" + "The port number must be an integer.");
-                            continue;
-                        }
-
-                        if (intClientPort < 1 || intClientPort > 65535) {
-                            out.println("ERROR" + "The port number must be between 1 and 65535.");
-                            continue;
-                        }
-
-                        synchronized (clientPortHash) {
-                            if (clientPortHash.contains(intClientPort)) {
-                                break;
-                            }
-                            out.println("ERROR" + "No user with that port connected.");
-                        }
-                    }
-
-                    while(true) {
-                        out.println("SUBMIT_YOUR_PORT");
-                        stringClientPort = in.nextLine();
-
-                        try {
-                            yourPort = Integer.parseInt(stringClientPort);
-                        } catch (NumberFormatException e) {
-                            out.println("ERROR" + "The port number must be an integer.");
-                            continue;
-                        }
-
-                        if (yourPort < 1 || yourPort > 65535) {
-                            out.println("ERROR" + "The port number must be between 1 and 65535.");
-                            continue;
-                        }
-                        synchronized (clientPortHash) {
-                            if(!clientPortHash.contains(yourPort)) {
-                                clientPortHash.add(yourPort);
-                                break;
-                            }
-                            out.println("ERROR" + "The port number is already in use.");
-                        }
-                    }
-                }
-
-                // Keep requesting a name until we get a unique one.
-                while (true) {
-                    out.println("SUBMIT_NAME ");
-                    name = in.nextLine();
-                    if (name == null) {
-                        continue;
-                    }
-                    synchronized (names) {
-                        if (!name.isEmpty() && !names.contains(name)) {
-                            names.add(name);
-                            System.out.println("New Client active: " + name
-                                    + ", Port: " + stringClientPort);
-                            break;
-                        }
-                        out.println("ERROR" + "Username already taken.");
-                    }
-                }
+                getClientPort();
+                name = getName();
 
                 out.println("NAME_ACCEPTED" + name);
                 messageArea.append(getDateAndTime() + name + " has joined" + "\n");
+                writers.add(out);
+                clientHashMap.put(name, out);
 
                 for (PrintWriter writer : writers) {
                     writer.println("MESSAGE " + name + " has joined");
 
                 }
-                writers.add(out);
-
-                clientHashMap.put(name, out);
 
                 // Accept messages from this client and broadcast them.
-                while (true) {
-                    String input = in.nextLine();
-                    if (input.toLowerCase().startsWith("/quit")) {
-                        return;
-                    }
-
-
-                    // Send a private message to one user
-                    if(input.contains(">>")) {
-
-                        String person = input.substring(0, input.indexOf(">"));
-
-                        if (clientHashMap.containsKey(person)) {
-                            PrintWriter writer = clientHashMap.get(person);
-                            writer.println("MESSAGE " + name + ": " + input);
-                            out.println("MESSAGE " + name + ": " + input);
-                        }
-                    } else {
-
-                        // Show the list of active users
-                        if(input.toLowerCase().startsWith("list users")) {
-                            for (String s : names) {
-                                out.println("MESSAGE " + s + "\n");
-                            }
-                        } else {
-
-                            //Send message to everyone
-                            for (PrintWriter writer : writers) {
-                                writer.println("MESSAGE " + name + ": " + input);
-                            }
-                        }
-                    }
-
-                    messageArea.append(getDateAndTime() + name + ": " + input + "\n");
-
-                }
+                acceptMessages();
             } catch (Exception e) {
-
                 System.out.println(e.toString());
             } finally {
 
@@ -225,8 +101,117 @@ public class ChatServer {
                 try { socket.close(); } catch (IOException ignored) {}
             }
         }
+
+        private String getName() {
+            String clientName;
+
+            while (true) {
+                out.println("SUBMIT_NAME ");
+                clientName = in.nextLine();
+
+                if (clientName == null) {
+                    continue;
+                }
+
+                synchronized (names) {
+                    if (!clientName.isEmpty() && !names.contains(clientName)) {
+                        names.add(clientName);
+                        return clientName;
+                    }
+                    out.println("ERROR" + "Username already taken.");
+                }
+            }
+        }
+
+        private void getClientPort() {
+
+            if(clientPortHash.isEmpty()) {
+                out.println("FIRST_CLIENT");
+                stringClientPort = in.nextLine();
+                intClientPort = Integer.parseInt(stringClientPort);
+
+                synchronized (clientPortHash) {
+                    clientPortHash.add(intClientPort);
+                }
+
+            } else {
+                while (true) {
+                    out.println("SUBMIT_PORT_TO_CONNECT");
+                    stringClientPort = in.nextLine();
+                    intClientPort = Integer.parseInt(stringClientPort);
+
+                    synchronized (clientPortHash) {
+                        if (clientPortHash.contains(intClientPort)) {
+                            break;
+                        }
+                        out.println("ERROR" + "No user with that port connected.");
+                    }
+                }
+
+                while(true) {
+                    out.println("SUBMIT_YOUR_PORT");
+                    stringClientPort = in.nextLine();
+                    yourPort = Integer.parseInt(stringClientPort);
+
+                    synchronized (clientPortHash) {
+                        if(!clientPortHash.contains(yourPort)) {
+                            clientPortHash.add(yourPort);
+                            break;
+                        }
+                        out.println("ERROR" + "The port number is already in use.");
+                    }
+                }
+            }
+        }
+
+        private void acceptMessages() {
+            while (true) {
+                String input = in.nextLine();
+                if (input.toLowerCase().startsWith("/quit")) {
+                    return;
+                }
+
+                // Send the list of commands to the user that requires it
+                if(input.toLowerCase().startsWith("list commands")) {
+                    listCommands();
+                } else if(input.contains(">>")) {
+
+                    // Send a private message to one user
+                    String person = input.substring(0, input.indexOf(">"));
+
+                    if (clientHashMap.containsKey(person)) {
+                        PrintWriter writer = clientHashMap.get(person);
+                        writer.println("MESSAGE " + name + ": " + input);
+                        out.println("MESSAGE " + name + ": " + input);
+                    }
+                } else {
+                    // Show the list of active users
+                    if(input.toLowerCase().startsWith("list users")) {
+                        for (String s : names) {
+                            out.println("MESSAGE " + s + "\n");
+                        }
+                    } else {
+                        //Send message to everyone
+                        for (PrintWriter writer : writers) {
+                            writer.println("MESSAGE " + name + ": " + input);
+                        }
+                    }
+                }
+                messageArea.append(getDateAndTime() + name + ": " + input + "\n");
+            }
+        }
+
+        // List of the current commands
+        private void listCommands() {
+            out.println("MESSAGE " + " list commands - Shows all the available commands");
+            out.println("MESSAGE " + " list users - Lists all the active chat members \n");
+            out.println("MESSAGE " + " /quit - Quit the chat application");
+            out.println("MESSAGE " + " Enter the username of the person you want to send a private message and then put >>");
+
+        }
     }
 
+    // Return current date and time
     private static String getDateAndTime() {
         DateTimeFormatter DTF = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss - ");
         LocalDateTime LDT = LocalDateTime.now();
