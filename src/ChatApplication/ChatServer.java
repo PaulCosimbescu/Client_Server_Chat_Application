@@ -48,8 +48,6 @@ public class ChatServer {
 
         ExecutorService pool = Executors.newFixedThreadPool(500);
         try (ServerSocket listener = new ServerSocket(serverPort)) {
-            messageArea.append(getDateAndTime() + "Someone is trying to connect. \n");
-
             while (true) {
                 pool.execute(new Handler(listener.accept()));
             }

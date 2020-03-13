@@ -235,6 +235,7 @@ public class ChatClient {
         }
     }
 
+
     // Method for warning message if the user input is wrong
     private void showError(String message) {
         JOptionPane.showMessageDialog(this.frame,
