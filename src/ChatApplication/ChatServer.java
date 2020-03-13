@@ -1,3 +1,13 @@
+/**
+ * References:
+ * https://www.w3schools.com/java/java_date.asp
+ * https://stackoverflow.com/questions/17147352/checking-if-server-is-online-from-java-code
+ * https://www.udemy.com/course/java-the-complete-java-developer-course/
+ * https://www.udemy.com/course/java-socket-programming-build-a-chat-application/
+ * https://www.udemy.com/course/java-network-programming/
+ * https://youtu.be/Uo5DY546rKY
+ */
+
 package ChatApplication;
 
 import javax.swing.*;
@@ -38,6 +48,8 @@ public class ChatServer {
 
         ExecutorService pool = Executors.newFixedThreadPool(500);
         try (ServerSocket listener = new ServerSocket(serverPort)) {
+            messageArea.append(getDateAndTime() + "Someone is trying to connect. \n");
+
             while (true) {
                 pool.execute(new Handler(listener.accept()));
             }
@@ -53,7 +65,6 @@ public class ChatServer {
         private PrintWriter out;
 
         public Handler(Socket socket) throws IOException {
-            messageArea.append(getDateAndTime() + "Someone is trying to connect. \n");
 
             this.socket = socket;
             this.in = new Scanner(socket.getInputStream());
@@ -238,12 +249,12 @@ public class ChatServer {
             try {
                 inputPort = Integer.parseInt(stringPort);
             } catch (Exception e) {
-                showError("Port must pe an integer");
+                showError("Port must pe an integer!");
                 continue;
             }
 
             if (inputPort < 1 || inputPort > 65535) {
-                showError("The port must be between 1 and 65535");
+                showError("The port must be between 1 and 65535!");
                 continue;
             }
             break;

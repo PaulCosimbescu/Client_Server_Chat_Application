@@ -1,3 +1,13 @@
+/**
+ * References:
+ * https://www.w3schools.com/java/java_date.asp
+ * https://stackoverflow.com/questions/17147352/checking-if-server-is-online-from-java-code
+ * https://www.udemy.com/course/java-the-complete-java-developer-course/
+ * https://www.udemy.com/course/java-socket-programming-build-a-chat-application/
+ * https://www.udemy.com/course/java-network-programming/
+ * https://youtu.be/Uo5DY546rKY
+ */
+
 package ChatApplication;
 
 import java.io.*;
@@ -81,7 +91,7 @@ public class ChatClient {
 
                     this.frame.setTitle("Chat Application - " + line.substring(13));
                     textField.setEditable(true);
-                    messageArea.append(getDateAndTime() + "You are connected. Use list commands \n");
+                    messageArea.append(getDateAndTime() + "You are connected. Write list commands \n");
 
                 } else if (line.startsWith("MESSAGE")) {
 
@@ -133,12 +143,12 @@ public class ChatClient {
             try {
                 inputPort = Integer.parseInt(stringPort);
             } catch (Exception e) {
-                showError("Port must pe an integer");
+                showError("Port must pe an integer!");
                 continue;
             }
 
             if (inputPort < 1 || inputPort > 65535) {
-                showError("The port must be between 1 and 65535");
+                showError("The port must be between 1 and 65535!");
                 continue;
             }
             break;
@@ -202,13 +212,13 @@ public class ChatClient {
             try {
                 intClientPort = Integer.parseInt(stringClientPort);
             } catch (NumberFormatException e) {
-                showError("The port must be an integer.");
+                showError("The port must be an integer!");
                 continue;
             }
 
             // See if the port number is in the feasible region
             if (intClientPort < 1 || intClientPort > 65535) {
-                showError("The port must be between 1 and 65535");
+                showError("The port must be between 1 and 65535!");
                 continue;
             }
             return intClientPort;
