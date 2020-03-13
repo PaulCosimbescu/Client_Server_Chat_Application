@@ -33,6 +33,7 @@ public class ChatClient {
 
     public ChatClient() {
 
+        // Keep asking for IP and port to connect to until a connection is made.
         do {
             serverAddress = getIP();
             port = getPort();
@@ -50,132 +51,6 @@ public class ChatClient {
             out.println(textField.getText());
             textField.setText("");
         });
-    }
-
-    // Method for getting IP
-    private String getIP() {
-        String IP = JOptionPane.showInputDialog(
-                this.frame,
-                "Choose an IP to connect too:",
-                "IP selection",
-                JOptionPane.PLAIN_MESSAGE
-        );
-
-        if(IP == null) {
-            System.exit(0);
-        }
-        return IP;
-    }
-
-    private String getName() {
-        String name;
-
-        while(true) {
-             name = JOptionPane.showInputDialog(
-                    this.frame,
-                    "Enter Username:",
-                    "Username",
-                    JOptionPane.PLAIN_MESSAGE
-            );
-
-            // Close if cancel button is pressed
-            if(name == null) {
-                System.exit(0);
-            }
-
-            // Check for spaces in Username
-            if(name.contains(" ")) {
-                showError("Username cannot contain spaces.");
-                continue;
-            }
-
-            return name;
-        }
-    }
-
-    // Get Server port
-    private int getPort() {
-        int inputPort;
-        String stringPort;
-
-        while(true) {
-            stringPort = JOptionPane.showInputDialog(
-                    this.frame,
-                    "Enter server port:",
-                    "Server port",
-                    JOptionPane.PLAIN_MESSAGE
-            );
-
-            // Close if cancel button is pressed
-            if(stringPort == null) {
-                System.exit(0);
-            }
-
-            try {
-                inputPort = Integer.parseInt(stringPort);
-            } catch (Exception e) {
-                showError("Port must pe an integer");
-                continue;
-            }
-
-            if (inputPort < 1 || inputPort > 65535) {
-                showError("The port must be between 1 and 65535");
-                continue;
-            }
-            break;
-        }
-        return inputPort;
-    }
-
-    private int setPort(boolean isFirstClient) {
-        int intClientPort;
-        String stringClientPort;
-        String messageToClient;
-
-        if(isFirstClient) {
-            messageToClient = "Port number to listen:";
-        } else {
-            messageToClient = "Port number to connect:";
-        }
-
-        while(true) {
-            stringClientPort = JOptionPane.showInputDialog(
-                    this.frame,
-                    messageToClient,
-                    "Client Port",
-                    JOptionPane.PLAIN_MESSAGE
-            );
-
-            if (stringClientPort == null) {
-                System.exit(0);
-            }
-
-            try {
-                intClientPort = Integer.parseInt(stringClientPort);
-            } catch (NumberFormatException e) {
-                showError("The port must be an integer.");
-                continue;
-            }
-
-            if (intClientPort < 1 || intClientPort > 65535) {
-                showError("The port must be between 1 and 65535");
-                continue;
-            }
-            return intClientPort;
-        }
-    }
-
-    // Check if the server is online
-    private boolean hostAvailabilityCheck(String serverAddress, int port) {
-        try (Socket ignored = new Socket(serverAddress, port)) {
-            return true;
-        } catch (IOException ex) {
-            JOptionPane.showMessageDialog(this.frame,
-                    "Connection to the server cannot be made!",
-                    "Error",
-                    JOptionPane.WARNING_MESSAGE);
-            return false;
-        }
     }
 
     public void run() throws IOException {
@@ -218,6 +93,135 @@ public class ChatClient {
         } finally {
             this.frame.setVisible(false);
             this.frame.dispose();
+        }
+    }
+
+    // Method for getting IP
+    private String getIP() {
+        String IP = JOptionPane.showInputDialog(
+                this.frame,
+                "Choose an IP to connect too:",
+                "IP selection",
+                JOptionPane.PLAIN_MESSAGE
+        );
+
+        // Close if cancel button is pressed
+        if(IP == null) {
+            System.exit(0);
+        }
+        return IP;
+    }
+
+    // Get Server port
+    private int getPort() {
+        int inputPort;
+        String stringPort;
+
+        while(true) {
+            stringPort = JOptionPane.showInputDialog(
+                    this.frame,
+                    "Enter server port:",
+                    "Server port",
+                    JOptionPane.PLAIN_MESSAGE
+            );
+
+            // Close if cancel button is pressed
+            if(stringPort == null) {
+                System.exit(0);
+            }
+
+            try {
+                inputPort = Integer.parseInt(stringPort);
+            } catch (Exception e) {
+                showError("Port must pe an integer");
+                continue;
+            }
+
+            if (inputPort < 1 || inputPort > 65535) {
+                showError("The port must be between 1 and 65535");
+                continue;
+            }
+            break;
+        }
+        return inputPort;
+    }
+
+    //Method for getting the name of the user
+    private String getName() {
+        String name;
+
+        //Keep asking for username until it doesn't have a space in it
+        while(true) {
+             name = JOptionPane.showInputDialog(
+                    this.frame,
+                    "Enter Username:",
+                    "Username",
+                    JOptionPane.PLAIN_MESSAGE
+            );
+
+            // Close if cancel button is pressed
+            if(name == null) {
+                System.exit(0);
+            }
+
+            // Check for spaces in Username
+            if(name.contains(" ")) {
+                showError("Username cannot contain spaces.");
+                continue;
+            }
+
+            return name;
+        }
+    }
+
+    private int setPort(boolean isFirstClient) {
+        int intClientPort;
+        String stringClientPort;
+        String messageToClient;
+
+        if(isFirstClient) {
+            messageToClient = "Port number to listen:";
+        } else {
+            messageToClient = "Port number to connect:";
+        }
+
+        while(true) {
+            stringClientPort = JOptionPane.showInputDialog(
+                    this.frame,
+                    messageToClient,
+                    "Client Port",
+                    JOptionPane.PLAIN_MESSAGE
+            );
+
+            // Close if cancel button is pressed
+            if (stringClientPort == null) {
+                System.exit(0);
+            }
+
+            // See if the port is an integer
+            try {
+                intClientPort = Integer.parseInt(stringClientPort);
+            } catch (NumberFormatException e) {
+                showError("The port must be an integer.");
+                continue;
+            }
+
+            // See if the port number is in the feasible region
+            if (intClientPort < 1 || intClientPort > 65535) {
+                showError("The port must be between 1 and 65535");
+                continue;
+            }
+            return intClientPort;
+        }
+    }
+
+    // Check if the server is online
+    private boolean hostAvailabilityCheck(String serverAddress, int port) {
+        try (Socket ignored = new Socket(serverAddress, port)) {
+            return true;
+        } catch (IOException ex) {
+            showError("Connection to the server cannot be made!");
+            return false;
         }
     }
 

@@ -26,6 +26,8 @@ public class ChatServer {
 
     public static void main(String[] args) throws Exception {
 
+        int serverPort = getPort();
+
         messageArea.setEditable(false);
         frame.getContentPane().add(new JScrollPane(messageArea), BorderLayout.CENTER);
         frame.pack();
@@ -35,7 +37,7 @@ public class ChatServer {
         messageArea.append(getDateAndTime() + "The chat server is running. \n");
 
         ExecutorService pool = Executors.newFixedThreadPool(500);
-        try (ServerSocket listener = new ServerSocket(11111)) {
+        try (ServerSocket listener = new ServerSocket(serverPort)) {
             while (true) {
                 pool.execute(new Handler(listener.accept()));
             }
@@ -46,7 +48,6 @@ public class ChatServer {
         private String name;
         private String stringClientPort;
         private int intClientPort;
-        private int yourPort;
         private Socket socket;
         private Scanner in;
         private PrintWriter out;
@@ -62,11 +63,11 @@ public class ChatServer {
 
         public void run() {
             try {
-                getClientPort();
+                int port = getClientPort();
                 name = getName();
 
                 out.println("NAME_ACCEPTED" + name);
-                messageArea.append(getDateAndTime() + name + " has joined" + "\n");
+                messageArea.append(getDateAndTime() + name + ", with port " + port + " has joined." + "\n");
                 writers.add(out);
                 clientHashMap.put(name, out);
 
@@ -123,7 +124,7 @@ public class ChatServer {
             }
         }
 
-        private void getClientPort() {
+        private int getClientPort() {
 
             if(clientPortHash.isEmpty()) {
                 out.println("FIRST_CLIENT");
@@ -132,41 +133,45 @@ public class ChatServer {
 
                 synchronized (clientPortHash) {
                     clientPortHash.add(intClientPort);
-                }
-
-            } else {
-                while (true) {
-                    out.println("SUBMIT_PORT_TO_CONNECT");
-                    stringClientPort = in.nextLine();
-                    intClientPort = Integer.parseInt(stringClientPort);
-
-                    synchronized (clientPortHash) {
-                        if (clientPortHash.contains(intClientPort)) {
-                            break;
-                        }
-                        out.println("ERROR" + "No user with that port connected.");
-                    }
-                }
-
-                while(true) {
-                    out.println("SUBMIT_YOUR_PORT");
-                    stringClientPort = in.nextLine();
-                    yourPort = Integer.parseInt(stringClientPort);
-
-                    synchronized (clientPortHash) {
-                        if(!clientPortHash.contains(yourPort)) {
-                            clientPortHash.add(yourPort);
-                            break;
-                        }
-                        out.println("ERROR" + "The port number is already in use.");
-                    }
+                    return intClientPort;
                 }
             }
+
+            int yourPort;
+            while (true) {
+                out.println("SUBMIT_YOUR_PORT");
+                stringClientPort = in.nextLine();
+                yourPort = Integer.parseInt(stringClientPort);
+
+                synchronized (clientPortHash) {
+                    if (!clientPortHash.contains(yourPort)) {
+                        clientPortHash.add(yourPort);
+                        break;
+                    }
+                    out.println("ERROR" + "The port number is already in use.");
+                }
+            }
+
+            while (true) {
+                out.println("SUBMIT_PORT_TO_CONNECT");
+                stringClientPort = in.nextLine();
+                intClientPort = Integer.parseInt(stringClientPort);
+
+                synchronized (clientPortHash) {
+                    if (clientPortHash.contains(intClientPort)) {
+                        break;
+                    }
+                    out.println("ERROR" + "No user with that port connected.");
+                }
+            }
+            return  yourPort;
         }
 
         private void acceptMessages() {
             while (true) {
                 String input = in.nextLine();
+
+                // User can quit the program by a simple command of /quit
                 if (input.toLowerCase().startsWith("/quit")) {
                     return;
                 }
@@ -197,7 +202,7 @@ public class ChatServer {
                         }
                     }
                 }
-                messageArea.append(getDateAndTime() + name + ": " + input + "\n");
+                messageArea.append(getDateAndTime() + name + ": " + input + "\n"); // Show message in server window
             }
         }
 
@@ -209,6 +214,49 @@ public class ChatServer {
             out.println("MESSAGE " + " Enter the username of the person you want to send a private message and then put >>");
 
         }
+    }
+
+
+    // Get Server port
+    private static int getPort() {
+        int inputPort;
+        String stringPort;
+
+        while(true) {
+            stringPort = JOptionPane.showInputDialog(
+                    frame,
+                    "Enter the port that the server will use:",
+                    "Server port",
+                    JOptionPane.PLAIN_MESSAGE
+            );
+
+            // Close if cancel button is pressed
+            if(stringPort == null) {
+                System.exit(0);
+            }
+
+            try {
+                inputPort = Integer.parseInt(stringPort);
+            } catch (Exception e) {
+                showError("Port must pe an integer");
+                continue;
+            }
+
+            if (inputPort < 1 || inputPort > 65535) {
+                showError("The port must be between 1 and 65535");
+                continue;
+            }
+            break;
+        }
+        return inputPort;
+    }
+
+    // Method for warning message if the user input is wrong
+    private static void showError(String message) {
+        JOptionPane.showMessageDialog(frame,
+                message,
+                "Error",
+                JOptionPane.WARNING_MESSAGE);
     }
 
     // Return current date and time
